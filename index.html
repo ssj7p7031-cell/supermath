@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Battle: Medieval Castle</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(180deg, #1b1426 0%, #2d1b36 50%, #120b18 100%); 
+            color: #fff; 
+            padding: 12px; 
+            text-align: center;
+            min-height: 100vh;
+        }
+        .container { max-width: 480px; margin: 0 auto; padding-bottom: 20px; }
+        
+        .stage-title { 
+            font-size: 1.1rem; 
+            color: #ffd700; 
+            margin-bottom: 10px; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            background: #4a2810;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 2px solid #8b5a2b;
+            display: inline-block;
+        }
+        
+        .arena { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-end; 
+            height: 170px; 
+            background: linear-gradient(to bottom, rgba(30,20,50,0.7), rgba(10,5,20,0.9)),
+                        repeating-linear-gradient(90deg, #3a2b4c 0px, #3a2b4c 30px, #2a1b3c 30px, #2a1b3c 60px);
+            border: 4px solid #8b5a2b; 
+            border-radius: 12px; 
+            padding: 15px; 
+            margin-bottom: 12px; 
+            position: relative; 
+            box-shadow: inset 0 0 20px #000, 0 4px 10px rgba(0,0,0,0.6);
+        }
+        .fighter { width: 45%; text-align: center; z-index: 2; transition: transform 0.3s; }
+        .avatar { font-size: 3.5rem; display: block; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.7)); }
+        .hp-bar-bg { background: #1a1a1a; height: 16px; border-radius: 8px; border: 2px solid #d4af37; overflow: hidden; margin-top: 4px; }
+        .hp-bar-fill { background: linear-gradient(90deg, #4caf50, #8bc34a); height: 100%; width: 100%; transition: width 0.3s ease; }
+        #enemy-hp { background: linear-gradient(90deg, #f44336, #ff9800); }
+        
+        .attack-hero { transform: translateX(50px) scale(1.1); }
+        .attack-enemy { transform: translateX(-50px) scale(1.1); }
+        
+        .card { 
+            background: #2a1b3c; 
+            border-radius: 12px; 
+            padding: 14px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+            border: 3px solid #6a0ded; 
+            min-height: 260px;
+        }
+        .q-counter { font-size: 0.85rem; color: #d1c4e9; margin-bottom: 6px; font-weight: bold; }
+        .question { 
+            font-size: 0.95rem; 
+            color: #fff; 
+            margin-bottom: 12px; 
+            line-height: 1.4; 
+            text-align: left; 
+            background: #1a0f26; 
+            padding: 12px; 
+            border-radius: 8px; 
+            border-left: 4px solid #ff9800;
+            min-height: 60px;
+        }
+        
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px; }
+        .opt-btn { 
+            background: linear-gradient(180deg, #ff4081, #c2185b); 
+            color: white; 
+            border: 2px solid #ff80ab; 
+            padding: 12px; 
+            font-size: 0.95rem; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .opt-btn:active { transform: scale(0.98); }
+        
+        .action-btn { width: 100%; padding: 14px; font-size: 1.1rem; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white; display: none; }
+        #btn-sword { background: linear-gradient(180deg, #ff9800, #e65100); border: 2px solid #ffe082; box-shadow: 0 4px 10px rgba(255,152,0,0.5); }
+        #btn-block { background: linear-gradient(180deg, #00bcd4, #006064); border: 2px solid #80deea; box-shadow: 0 4px 10px rgba(0,188,212,0.5); }
+        
+        #timer-box { font-size: 1rem; color: #ff5252; font-weight: bold; margin-bottom: 8px; display: none; }
+        #msg { margin-top: 8px; font-size: 0.9rem; min-height: 24px; font-weight: bold; line-height: 1.3; }
+        .reset-btn { margin-top: 15px; background: transparent; color: #8d99ae; border: 1px solid #555; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="stage-title" id="stage-txt">🏰 ประตูปราสาท ด่านที่ 1</div>
+
+    <div class="arena">
+        <div class="fighter" id="hero-box">
+            <span class="avatar" id="hero-avatar">🗡️</span>
+            <small>อัศวินคณิต (HP: <span id="p-hp-text">100</span>)</small>
+            <div class="hp-bar-bg"><div id="p-hp" class="hp-bar-fill"></div></div>
+        </div>
+        <div class="fighter" id="enemy-box">
+            <span class="avatar" id="enemy-avatar">👾</span>
+            <small><span id="enemy-name">ศัตรู</span> (HP: <span id="e-hp-text">100</span>)</small>
+            <div class="hp-bar-bg"><div id="e-hp" class="hp-bar-fill" id="enemy-hp"></div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="q-counter" id="q-count">คำถามที่ 1/3</div>
+        <div id="timer-box">⏰ ป้องกันภายใน: <span id="time-left">2</span> วิ!</div>
+        <div class="question" id="q-text">กำลังโหลดโจทย์...</div>
+
+        <div class="options-grid" id="options-box"></div>
+
+        <button class="action-btn" id="btn-sword" onclick="executeAttack()">⚔️ ชักดาบฟันศัตรู!</button>
+        <button class="action-btn" id="btn-block" onclick="executeBlock()">🛡️ กดยกโล่ป้องกัน!</button>
+
+        <div id="msg"></div>
+    </div>
+
+    <button class="reset-btn" onclick="resetGameSave()">🔄 เริ่มเล่นใหม่ตั้งแต่ด่าน 1</button>
+</div>
+
+<script>
+    const stages = [
+        {
+            name: "🏰 ปราสาทชั้นที่ 1: ตัวแปรสุ่มไม่ต่อเนื่อง",
+            enemy: "👾 การ์กอยล์ตัวแปรสุ่ม",
+            icon: "👾",
+            questions: [
+                { q: "ข้อใดนับเป็นตัวแปรสุ่มชนิดไม่ต่อเนื่อง (นับเป็นจำนวนเต็มได้)?", ops: ["จำนวนครั้งที่ทอดลูกเต๋า", "ความสูงของตัวละคร", "น้ำหนักของดาบ"], a: 0 },
+                { q: "โยนเหรียญ 2 เหรียญ X คือจำนวนเหรียญที่ออกหัว X มีค่าเป็นอะไรได้บ้าง?", ops: ["0, 1, 2", "1, 2", "1, 2, 3"], a: 0 },
+                { q: "ทอดลูกเต๋า 1 ลูก โอกาสได้แต้ม 6 มีค่าเท่าใด?", ops: ["1/6", "1/2", "6/6"], a: 0 }
+            ]
+        },
+        {
+            name: "🏰 ปราสาทชั้นที่ 2: ตัวแปรสุ่มต่อเนื่อง",
+            enemy: "👹 ยักษ์เฝ้าประตู",
+            icon: "👹",
+            questions: [
+                { q: "ข้อใดเป็นตัวแปรสุ่มชนิดต่อเนื่อง (วัดเป็นค่าทศนิยมได้)?", ops: ["เวลาที่ใช้ในการวิ่งเข้าปราสาท", "จำนวนมอนสเตอร์ในห้อง", "จำนวนเหรียญทอง"], a: 0 },
+                { q: "ผลรวมพื้นที่ทั้งหมดใต้กราฟความน่าจะเป็นต้องเท่ากับเท่าใดเสมอ?", ops: ["1", "0", "100"], a: 0 },
+                { q: "ความน่าจะเป็นที่ตัวแปรสุ่มต่อเนื่องจะมีค่าเป๊ะๆ ณ จุดใดจุดหนึ่ง มีค่าเท่าใด?", ops: ["0", "0.5", "1"], a: 0 }
+            ]
+        },
+        {
+            name: "🏰 ปราสาทชั้นที่ 3: ตารางแจกแจงความน่าจะเป็น",
+            enemy: "🧙‍♂️ จอมเวทเงา",
+            icon: "🧙‍♂️",
+            questions: [
+                { q: "ผลรวมของความน่าจะเป็นทั้งหมดในตาราง P(X=x) ต้องเท่ากับเท่าใด?", ops: ["1", "0", "ไม่จำกัด"], a: 0 },
+                { q: "ถ้า P(X=1) = 0.4 และ P(X=2) = 0.6 ผลรวมความน่าจะเป็นคือเท่าใด?", ops: ["1.0", "0.8", "0.2"], a: 0 },
+                { q: "ถ้า P(X=0) = 0.2 และ P(X=1) = 0.8 ค่า P(X ≥ 0) เท่ากับเท่าใด?", ops: ["1.0", "0.8", "0.2"], a: 0 }
+            ]
+        },
+        {
+            name: "🏰 ปราสาทชั้นที่ 4: ค่าคาดหมาย E(X)",
+            enemy: "🗿 โกเลมหิน",
+            icon: "🗿",
+            questions: [
+                { q: "ค่าคาดหมาย E(X) คืออะไรในทางสถิติ?", ops: ["ค่าเฉลี่ยระยะยาวของตัวแปรสุ่ม", "ค่าสูงสุดของข้อมูล", "ค่าต่ำสุดของข้อมูล"], a: 0 },
+                { q: "ถ้า E(X) = 5 แล้ว E(X + 2) จะมีค่าเท่าใด?", ops: ["7", "5", "10"], a: 0 },
+                { q: "ถ้า E(X) = 3 แล้ว E(2X) จะมีค่าเท่าใด?", ops: ["6", "3", "5"], a: 0 }
+            ]
+        },
+        {
+            name: "🏰 ปราสาทชั้นที่ 5: ความแปรปรวน Var(X)",
+            enemy: "🐉 มังกรเฝ้าสมบัติ",
+            icon: "🐉",
+            questions: [
+                { q: "ส่วนเบี่ยงเบนมาตรฐาน (σ) มีความสัมพันธ์อย่างไรกับความแปรปรวน?", ops: ["σ = √Var(X)", "σ = Var(X)²", "σ = Var(X) / 2"], a: 0 },
+                { q: "ถ้าความแปรปรวน Var(X) = 9 ส่วนเบี่ยงเบนมาตรฐานจะมีค่าเท่าใด?", ops: ["3", "81", "4.5"], a: 0 },
+                { q: "ค่าความแปรปรวน Var(X) สามารถติดลบได้หรือไม่?", ops: ["ไม่ได้ (ต้อง ≥ 0 เสมอ)", "ได้บางครั้ง", "ติดลบได้เสมอ"], a: 0 }
+            ]
+        },
+        {
+            name: "🏰 ปราสาทชั้นที่ 6: การแจกแจงทวินาม",
+            enemy: "🦹‍♂️ อัศวินดำทวินาม",
+            icon: "🦹‍♂️",
+            questions: [
+                { q: "การทดลองแบบทวินาม แต่ละครั้งจะเกิดผลลัพธ์ได้กี่แบบ?", ops: ["2 แบบ (สำเร็จ / ไม่สำเร็จ)", "3 แบบ", "ไม่จำกัดจำนวนแบบ"], a: 0 },
+                { q: "สูตรค่าคาดหมายของการแจกแจงทวินาม B(n, p) คือข้อใด?", ops: ["E(X) = n · p", "E(X) = n + p", "E(X) = n / p"], a: 0 },
+                { q: "ทำข้อสอบเดา 10 ข้อ (n=10) โอกาสถูกข้อละ 0.5 (p=0.5) ค่าคาดหมายที่จะเดาถูกคือ?", ops: ["5 ข้อ", "10 ข้อ", "2 ข้อ"], a: 0 }
+            ]
+        },
+        {
+            name: "🏰 ห้องโถงชั้นสูงสุด: การแจกแจงปกติ",
+            enemy: "👑 จอมมารโค้งปกติ",
+            icon: "👑",
+            questions: [
+                { q: "เส้นโค้งความน่าจะเป็นของการแจกแจงปกติมีรูปร่างอย่างไร?", ops: ["รูปทรงระฆังคว่ำ", "รูปสามเหลี่ยม", "รูปสี่เหลี่ยม"], a: 0 },
+                { q: "ค่ามาตรฐาน Z เท่ากับ 0 หมายความว่าค่าข้อมูลนั้นเป็นอย่างไร?", ops: ["เท่ากับค่าเฉลี่ย (μ)", "น้อยกว่าค่าเฉลี่ย", "มากกว่าค่าเฉลี่ย"], a: 0 },
+                { q: "พื้นที่ทั้งหมดใต้เส้นโค้งปกติมาตรฐานมีค่าเท่าใด?", ops: ["1", "0.5", "100"], a: 0 }
+            ]
+        }
+    ];
+
+    let currentStage = 0;
+    let currentQ = 0;
+    let pHP = 100, eHP = 100;
+    let timer = null;
+    let blockedSuccess = false;
+
+    function saveProgress() {
+        const gameData = { currentStage, currentQ, pHP, eHP };
+        localStorage.setItem('mathBattleSave_v3', JSON.stringify(gameData));
+    }
+
+    function loadProgress() {
+        const saved = localStorage.getItem('mathBattleSave_v3');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                currentStage = data.currentStage !== undefined ? data.currentStage : 0;
+                currentQ = data.currentQ !== undefined ? data.currentQ : 0;
+                pHP = data.pHP !== undefined ? data.pHP : 100;
+                eHP = data.eHP !== undefined ? data.eHP : 100;
+            } catch (e) {
+                initGame();
+                return;
+            }
+        } else {
+            initGame();
+            return;
+        }
+
+        if (currentStage >= stages.length) currentStage = 0;
+        if (currentQ >= 3) currentQ = 0;
+
+        updateHP();
+        loadQuestion();
+    }
+
+    function initGame() {
+        pHP = 100; eHP = 100;
+        currentStage = 0; currentQ = 0;
+        saveProgress();
+        updateHP();
+        loadQuestion();
+    }
+
+    function resetGameSave() {
+        if(confirm("ต้องการเริ่มเล่นใหม่ตั้งแต่ด่าน 1 ใช่หรือไม่?")) {
+            localStorage.removeItem('mathBattleSave_v3');
+            initGame();
+        }
+    }
+
+    function loadQuestion() {
+        if (currentQ >= 3) currentQ = 0;
+
+        const stage = stages[currentStage];
+        document.getElementById('stage-txt').innerText = stage.name;
+        document.getElementById('enemy-name').innerText = stage.enemy.split(" ")[1] || stage.enemy;
+        document.getElementById('enemy-avatar').innerText = stage.icon;
+        document.getElementById('q-count').innerText = `คำถามที่ ${currentQ + 1}/3`;
+        document.getElementById('msg').innerText = '';
+        
+        document.getElementById('btn-sword').style.display = 'none';
+        document.getElementById('btn-block').style.display = 'none';
+        document.getElementById('timer-box').style.display = 'none';
+
+        const qData = stage.questions[currentQ];
+        document.getElementById('q-text').innerText = qData.q;
+
+        const optsBox = document.getElementById('options-box');
+        optsBox.style.display = 'grid';
+        optsBox.innerHTML = '';
+
+        let indices = [0, 1, 2];
+        indices.sort(() => Math.random() - 0.5);
+
+        indices.forEach(idx => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.innerText = qData.ops[idx];
+            btn.onclick = () => checkAnswer(idx === qData.a);
+            optsBox.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(isCorrect) {
+        document.getElementById('options-box').style.display = 'none';
+        const msg = document.getElementById('msg');
+
+        if (isCorrect) {
+            msg.style.color = '#ffd700';
+            msg.innerText = '✨ ตอบถูกต้อง! ได้รับดาบอัศวิน กดโจมตีเลย!';
+            document.getElementById('btn-sword').style.display = 'block';
+        } else {
+            msg.style.color = '#ff5252';
+            msg.innerText = '❌ ตอบผิด! ศัตรูพุ่งเข้ามาแล้ว กดป้องกันเร็ว!';
+            startDefensePhase();
+        }
+    }
+
+    function executeAttack() {
+        document.getElementById('btn-sword').style.display = 'none';
+        const hero = document.getElementById('hero-box');
+        hero.classList.add('attack-hero');
+        setTimeout(() => hero.classList.remove('attack-hero'), 300);
+
+        const msg = document.getElementById('msg');
+        const dmg = 35;
+        eHP = Math.max(0, eHP - dmg);
+
+        // ระบบยาฟื้นฟูเลือด
+        if (currentStage < 4) { // ด่าน 1 ถึง 4 (index 0 - 3)
+            pHP = Math.min(100, pHP + 15);
+            msg.style.color = '#4caf50';
+            msg.innerText = '⚔️ ฟันศัตรูสำเร็จ! + ได้รับยาฟื้นฟู! 💉🏥 (ฟื้นฟู HP +15)';
+        } else { // ด่าน 5 เป็นต้นไป (index 4+)
+            msg.style.color = '#ff9800';
+            msg.innerText = '⚔️ ฟันศัตรูสำเร็จ! 💥 ไอเทมยาฟื้นฟูถูกทำลายทิ้งในด่านนี้!';
+        }
+
+        updateHP();
+
+        if (eHP <= 0) {
+            setTimeout(nextStage, 1000);
+        } else {
+            currentQ = (currentQ + 1) % 3;
+            saveProgress();
+            setTimeout(loadQuestion, 1200);
+        }
+    }
+
+    function startDefensePhase() {
+        document.getElementById('btn-block').style.display = 'block';
+        document.getElementById('timer-box').style.display = 'block';
+        blockedSuccess = false;
+
+        let timeLeft = 2;
+        document.getElementById('time-left').innerText = timeLeft;
+
+        timer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('time-left').innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                if (!blockedSuccess) {
+                    enemyAttack(false);
+                }
+            }
+        }, 1000);
+    }
+
+    function executeBlock() {
+        if (timer) clearInterval(timer);
+        blockedSuccess = true;
+        document.getElementById('btn-block').style.display = 'none';
+        document.getElementById('timer-box').style.display = 'none';
+        enemyAttack(true);
+    }
+
+    function enemyAttack(isBlocked) {
+        const enemy = document.getElementById('enemy-box');
+        enemy.classList.add('attack-enemy');
+        setTimeout(() => enemy.classList.remove('attack-enemy'), 300);
+
+        const msg = document.getElementById('msg');
+        let dmg = 25;
+
+        if (isBlocked) {
+            dmg = 8;
+            msg.style.color = '#4caf50';
+            msg.innerText = `🛡️ ป้องกันทัน! ลดความเสียหายเหลือ ${dmg} หน่วย`;
+        } else {
+            msg.style.color = '#ff5252';
+            msg.innerText = `💥 ป้องกันไม่ทัน! โดนโจมตีเต็มๆ ${dmg} หน่วย`;
+        }
+
+        pHP = Math.max(0, pHP - dmg);
+        updateHP();
+
+        if (pHP <= 0) {
+            setTimeout(() => {
+                alert('☠️ พ่ายแพ้ในการรบ! เริ่มต้นใหม่จากด่านแรก');
+                initGame();
+            }, 500);
+        } else {
+            currentQ = (currentQ + 1) % 3;
+            saveProgress();
+            setTimeout(loadQuestion, 1200);
+        }
+    }
+
+    function nextStage() {
+        currentStage++;
+        if (currentStage >= stages.length) {
+            alert('🏆 ยินดีด้วย! คุณพิชิตปราสาทคณิตศาสตร์ทั้ง 7 ชั้นสำเร็จ!');
+            initGame();
+        } else {
+            let infoMsg = `🎉 ผ่านชั้นที่ ${currentStage}! กำลังขึ้นสู่ ${stages[currentStage].name}`;
+            if (currentStage >= 4) {
+                infoMsg += "\n⚠️ เตือน: ตั้งแต่ด่านนี้เป็นต้นไป ยาฟื้นฟูเลือดจะถูกทำลายทิ้ง!";
+            }
+            alert(infoMsg);
+            eHP = 100;
+            currentQ = 0;
+            saveProgress();
+            updateHP();
+            loadQuestion();
+        }
+    }
+
+    function updateHP() {
+        document.getElementById('p-hp').style.width = pHP + '%';
+        document.getElementById('p-hp-text').innerText = pHP;
+        document.getElementById('e-hp').style.width = eHP + '%';
+        document.getElementById('e-hp-text').innerText = eHP;
+    }
+
+    loadProgress();
+</script>
+</body>
+</html>
